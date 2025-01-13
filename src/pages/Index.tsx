@@ -26,7 +26,7 @@ const Index = () => {
             Chá de Casa Nova
           </h1>
           <h2 className="text-2xl md:text-3xl text-sage-700 mb-8">
-            Clemi e João
+            Laura
           </h2>
           
           {!isAdmin && (
