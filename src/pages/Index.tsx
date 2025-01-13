@@ -46,7 +46,7 @@ const Index = () => {
           ) : !userName && !isAdmin ? (
             <NameInput onNameSubmit={handleNameSubmit} />
           ) : (
-            <GiftList userName={userName} />
+            <GiftList userName={userName} isAdmin={isAdmin} />
           )}
         </div>
       </div>

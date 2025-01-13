@@ -9,13 +9,15 @@ interface Gift {
   name: string;
   description: string;
   chosen: boolean;
+  chosenBy?: string;
 }
 
 interface GiftListProps {
   userName: string;
+  isAdmin?: boolean;
 }
 
-export const GiftList = ({ userName }: GiftListProps) => {
+export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const { toast } = useToast();
   const [gifts, setGifts] = useState<Gift[]>([
     { id: 1, name: "Jogo de Talheres", description: "Conjunto com 24 peças em inox", chosen: false },
@@ -40,11 +42,45 @@ export const GiftList = ({ userName }: GiftListProps) => {
           title: "Presente escolhido!",
           description: "Sua escolha foi registrada com sucesso",
         });
-        return { ...gift, chosen: true };
+        return { ...gift, chosen: true, chosenBy: userName };
       }
       return gift;
     }));
   };
+
+  if (isAdmin) {
+    return (
+      <div className="w-full max-w-4xl space-y-6 animate-fadeIn">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold mb-2">Painel Administrativo</h2>
+          <p className="text-muted-foreground">Lista completa de presentes e escolhas</p>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-4">
+          {gifts.map((gift) => (
+            <Card key={gift.id}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-sage-600" />
+                  {gift.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-2">{gift.description}</p>
+                <p className="text-sm font-medium">
+                  Status: {gift.chosen ? (
+                    <span className="text-green-600">Escolhido por {gift.chosenBy}</span>
+                  ) : (
+                    <span className="text-yellow-600">Disponível</span>
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl space-y-6 animate-fadeIn">
