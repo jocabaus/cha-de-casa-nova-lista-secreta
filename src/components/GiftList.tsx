@@ -30,6 +30,7 @@ interface GiftListProps {
 export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const { toast } = useToast();
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
+  const [hasChosen, setHasChosen] = useState(false);
   const [gifts, setGifts] = useState<Gift[]>([
     { id: 1, name: "Jogo de Talheres", description: "Conjunto com 24 peças em inox", chosen: false },
     { id: 2, name: "Jogo de Copos", description: "6 copos para água em vidro", chosen: false },
@@ -58,6 +59,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
       return gift;
     }));
     setSelectedGiftId(null);
+    setHasChosen(true);
   };
 
   if (isAdmin) {
@@ -96,6 +98,22 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
               </CardContent>
             </Card>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (hasChosen) {
+    return (
+      <div className="w-full max-w-4xl space-y-6 animate-fadeIn text-center">
+        <div className="bg-sage-50 p-8 rounded-lg shadow-sm">
+          <h2 className="text-2xl font-semibold mb-4 text-sage-700">Obrigado, {userName}!</h2>
+          <p className="text-lg text-sage-600 mb-2">
+            Sua escolha foi registrada com sucesso.
+          </p>
+          <p className="text-muted-foreground">
+            Agradecemos sua participação neste momento especial.
+          </p>
         </div>
       </div>
     );
