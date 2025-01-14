@@ -58,22 +58,29 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
         
         <div className="grid grid-cols-1 gap-4">
           {gifts.map((gift) => (
-            <Card key={gift.id}>
+            <Card key={gift.id} className={gift.chosen ? "opacity-75" : ""}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-sage-600" />
-                  {gift.name}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 text-sage-600" />
+                    {gift.name}
+                  </div>
+                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                    gift.chosen 
+                      ? "bg-red-100 text-red-700"
+                      : "bg-green-100 text-green-700"
+                  }`}>
+                    {gift.chosen ? "Indisponível" : "Disponível"}
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-2">{gift.description}</p>
-                <p className="text-sm font-medium">
-                  Status: {gift.chosen ? (
-                    <span className="text-green-600">Escolhido por {gift.chosenBy}</span>
-                  ) : (
-                    <span className="text-yellow-600">Disponível</span>
-                  )}
-                </p>
+                {gift.chosen && (
+                  <p className="text-sm font-medium text-sage-600">
+                    Escolhido por: <span className="font-bold">{gift.chosenBy}</span>
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))}
