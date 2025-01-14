@@ -3,6 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Gift {
   id: number;
@@ -19,6 +29,7 @@ interface GiftListProps {
 
 export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const { toast } = useToast();
+  const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [gifts, setGifts] = useState<Gift[]>([
     { id: 1, name: "Jogo de Talheres", description: "Conjunto com 24 peças em inox", chosen: false },
     { id: 2, name: "Jogo de Copos", description: "6 copos para água em vidro", chosen: false },
@@ -46,6 +57,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
       }
       return gift;
     }));
+    setSelectedGiftId(null);
   };
 
   if (isAdmin) {
@@ -108,7 +120,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
             <CardContent>
               <p className="text-muted-foreground mb-4">{gift.description}</p>
               <Button 
-                onClick={() => handleChooseGift(gift.id)}
+                onClick={() => setSelectedGiftId(gift.id)}
                 className="w-full bg-sage-600 hover:bg-sage-700"
               >
                 Escolher Este Presente
@@ -117,6 +129,26 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
           </Card>
         ))}
       </div>
+
+      <AlertDialog open={selectedGiftId !== null} onOpenChange={() => setSelectedGiftId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar escolha do presente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem certeza que gostaria de selecionar este presente?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vou pensar um pouco mais</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedGiftId && handleChooseGift(selectedGiftId)}
+              className="bg-sage-600 hover:bg-sage-700"
+            >
+              Confirmar seleção
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
