@@ -85,12 +85,28 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
     setHasChosen(true);
   };
 
+  const handleReset = () => {
+    localStorage.setItem('gifts', JSON.stringify(initialGifts));
+    queryClient.setQueryData(['gifts'], initialGifts);
+    toast({
+      title: "Lista reiniciada",
+      description: "Todos os presentes estão disponíveis novamente",
+    });
+  };
+
   if (isAdmin) {
     return (
       <div className="w-full max-w-4xl space-y-6 animate-fadeIn">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-semibold mb-2">Painel Administrativo</h2>
-          <p className="text-muted-foreground">Lista completa de presentes e escolhas</p>
+          <p className="text-muted-foreground mb-4">Lista completa de presentes e escolhas</p>
+          <Button 
+            onClick={handleReset}
+            variant="outline"
+            className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
+          >
+            Reiniciar Lista de Presentes
+          </Button>
         </div>
         
         <div className="grid grid-cols-1 gap-4">
