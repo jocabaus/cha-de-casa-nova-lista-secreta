@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Gift {
   id: number;
@@ -27,22 +28,34 @@ interface GiftListProps {
   isAdmin?: boolean;
 }
 
+const initialGifts: Gift[] = [
+  { id: 1, name: "Saleiro e Pimenteiro", description: "Um conjuntinho de saleiro e pimenteiro divertidos", chosen: false },
+  { id: 2, name: "Cesto de Roupa Suja", description: "Um cestinho alto para roupas sujas, gosto daqueles de palha ou materiais naturais", chosen: false },
+  { id: 3, name: "Potes Herméticos", description: "Conjuntinho de potes bonitos para colocar arroz, açúcar, farinha etc.", chosen: false },
+  { id: 4, name: "Tapetinho Capacho", description: "Com uma mensagem ou imagem divertida", chosen: false },
+  { id: 5, name: "Utilitários de Cozinha", description: "Panelas, chaleira, travessas, formas, canecas, cumbucas, utensílios pra comidas no geral", chosen: false },
+  { id: 6, name: "Copos", description: "Copos de vidro para água e suco", chosen: false },
+  { id: 7, name: "Decorações", description: "Quadrinhos, almofadas, vasinhos de plantas etc.", chosen: false },
+  { id: 8, name: "Caixas Organizadoras", description: "De todos os tamanhos, em tons neutros", chosen: false },
+  { id: 9, name: "Jogo de Cama Queen", description: "Com uma estampa bonita e/ou em tons pastel", chosen: false },
+  { id: 10, name: "Toalha de Rosto", description: "Qualquer tom de verde", chosen: false },
+];
+
 export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [hasChosen, setHasChosen] = useState(false);
-  const [gifts, setGifts] = useState<Gift[]>([
-    { id: 1, name: "Saleiro e Pimenteiro", description: "Um conjuntinho de saleiro e pimenteiro divertidos", chosen: false },
-    { id: 2, name: "Cesto de Roupa Suja", description: "Um cestinho alto para roupas sujas, gosto daqueles de palha ou materiais naturais", chosen: false },
-    { id: 3, name: "Potes Herméticos", description: "Conjuntinho de potes bonitos para colocar arroz, açúcar, farinha etc.", chosen: false },
-    { id: 4, name: "Tapetinho Capacho", description: "Com uma mensagem ou imagem divertida", chosen: false },
-    { id: 5, name: "Utilitários de Cozinha", description: "Panelas, chaleira, travessas, formas, canecas, cumbucas, utensílios pra comidas no geral", chosen: false },
-    { id: 6, name: "Copos", description: "Copos de vidro para água e suco", chosen: false },
-    { id: 7, name: "Decorações", description: "Quadrinhos, almofadas, vasinhos de plantas etc.", chosen: false },
-    { id: 8, name: "Caixas Organizadoras", description: "De todos os tamanhos, em tons neutros", chosen: false },
-    { id: 9, name: "Jogo de Cama Queen", description: "Com uma estampa bonita e/ou em tons pastel", chosen: false },
-    { id: 10, name: "Toalha de Rosto", description: "Qualquer tom de verde", chosen: false },
-  ]);
+
+  const { data: gifts = initialGifts } = useQuery({
+    queryKey: ['gifts'],
+    queryFn: () => {
+      // Simulating an API call with localStorage
+      const storedGifts = localStorage.getItem('gifts');
+      return storedGifts ? JSON.parse(storedGifts) : initialGifts;
+    },
+    refetchInterval: 5000, // Refetch every 5 seconds to keep the list updated
+  });
 
   const handleChooseGift = (giftId: number) => {
     const updatedGifts = gifts.map(gift => {
@@ -63,7 +76,11 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
       }
       return gift;
     });
-    setGifts(updatedGifts);
+
+    // Update localStorage and invalidate query
+    localStorage.setItem('gifts', JSON.stringify(updatedGifts));
+    queryClient.setQueryData(['gifts'], updatedGifts);
+    
     setSelectedGiftId(null);
     setHasChosen(true);
   };
