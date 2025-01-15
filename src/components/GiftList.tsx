@@ -45,7 +45,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   ]);
 
   const handleChooseGift = (giftId: number) => {
-    setGifts(gifts.map(gift => {
+    const updatedGifts = gifts.map(gift => {
       if (gift.id === giftId) {
         if (gift.chosen) {
           toast({
@@ -62,7 +62,8 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
         return { ...gift, chosen: true, chosenBy: userName };
       }
       return gift;
-    }));
+    });
+    setGifts(updatedGifts);
     setSelectedGiftId(null);
     setHasChosen(true);
   };
@@ -95,7 +96,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-2">{gift.description}</p>
-                {gift.chosen && (
+                {gift.chosen && gift.chosenBy && (
                   <p className="text-sm font-medium text-sage-600">
                     Escolhido por: <span className="font-bold">{gift.chosenBy}</span>
                   </p>
