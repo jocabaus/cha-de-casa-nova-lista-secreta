@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
@@ -14,19 +11,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-interface Gift {
-  id: number;
-  name: string;
-  description: string;
-  chosen: boolean;
-  chosenBy?: string;
-}
-
-interface GiftListProps {
-  userName: string;
-  isAdmin?: boolean;
-}
+import { Gift } from "@/types/gift";
+import { AdminGiftList } from "./gift/AdminGiftList";
+import { UserGiftList } from "./gift/UserGiftList";
+import { ThankYouMessage } from "./gift/ThankYouMessage";
 
 const initialGifts: Gift[] = [
   { id: 1, name: "Saleiro e Pimenteiro", description: "Um conjuntinho de saleiro e pimenteiro divertidos", chosen: false },
@@ -43,13 +31,18 @@ const initialGifts: Gift[] = [
 
 const STORAGE_KEY = 'gifts_v2';
 
+interface GiftListProps {
+  userName: string;
+  isAdmin?: boolean;
+}
+
 export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [hasChosen, setHasChosen] = useState(false);
 
-  const { data: gifts = initialGifts, refetch } = useQuery({
+  const { data: gifts = initialGifts } = useQuery({
     queryKey: ['gifts'],
     queryFn: async () => {
       const storedGifts = localStorage.getItem(STORAGE_KEY);
@@ -59,9 +52,9 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
       }
       return JSON.parse(storedGifts);
     },
-    refetchInterval: 2000, // Refetch every 2 seconds
-    staleTime: 0, // Consider data stale immediately
-    gcTime: 0, // Don't keep data in cache
+    refetchInterval: 2000,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const handleChooseGift = async (giftId: number) => {
@@ -113,97 +106,20 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   };
 
   if (isAdmin) {
-    return (
-      <div className="w-full max-w-4xl space-y-6 animate-fadeIn">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-semibold mb-2">Painel Administrativo</h2>
-          <p className="text-muted-foreground mb-4">Lista completa de presentes e escolhas</p>
-          <Button 
-            onClick={handleReset}
-            variant="outline"
-            className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
-          >
-            Reiniciar Lista de Presentes
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 gap-4">
-          {gifts.map((gift) => (
-            <Card key={gift.id} className={gift.chosen ? "opacity-75" : ""}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Gift className="h-5 w-5 text-sage-600" />
-                    {gift.name}
-                  </div>
-                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-                    gift.chosen 
-                      ? "bg-red-100 text-red-700"
-                      : "bg-green-100 text-green-700"
-                  }`}>
-                    {gift.chosen ? "Indisponível" : "Disponível"}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-2">{gift.description}</p>
-                {gift.chosen && gift.chosenBy && (
-                  <p className="text-sm font-medium text-sage-600">
-                    Escolhido por: <span className="font-bold">{gift.chosenBy}</span>
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <AdminGiftList gifts={gifts} onReset={handleReset} />;
   }
 
   if (hasChosen) {
-    return (
-      <div className="w-full max-w-4xl space-y-6 animate-fadeIn text-center">
-        <div className="bg-sage-50 p-8 rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4 text-sage-700">Obrigado, {userName}!</h2>
-          <p className="text-lg text-sage-600 mb-2">
-            Sua escolha foi registrada com sucesso.
-          </p>
-          <p className="text-muted-foreground">
-            Agradecemos sua participação neste momento especial.
-          </p>
-        </div>
-      </div>
-    );
+    return <ThankYouMessage userName={userName} />;
   }
 
   return (
-    <div className="w-full max-w-4xl space-y-6 animate-fadeIn">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold mb-2">Olá, {userName}!</h2>
-        <p className="text-muted-foreground">Escolha seu presente da lista abaixo</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {gifts.filter(gift => !gift.chosen).map((gift) => (
-          <Card key={gift.id} className="card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="h-5 w-5 text-sage-600" />
-                {gift.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">{gift.description}</p>
-              <Button 
-                onClick={() => setSelectedGiftId(gift.id)}
-                className="w-full bg-sage-600 hover:bg-sage-700"
-              >
-                Escolher Este Presente
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+    <>
+      <UserGiftList 
+        gifts={gifts}
+        userName={userName}
+        onChooseGift={(id) => setSelectedGiftId(id)}
+      />
 
       <AlertDialog open={selectedGiftId !== null} onOpenChange={() => setSelectedGiftId(null)}>
         <AlertDialogContent>
@@ -224,6 +140,6 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 };
