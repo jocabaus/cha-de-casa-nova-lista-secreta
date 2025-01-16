@@ -41,53 +41,71 @@ const initialGifts: Gift[] = [
   { id: 10, name: "Toalha de Rosto", description: "Qualquer tom de verde", chosen: false },
 ];
 
+const STORAGE_KEY = 'gifts_v2';
+
 export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [hasChosen, setHasChosen] = useState(false);
 
-  const { data: gifts = initialGifts } = useQuery({
+  const { data: gifts = initialGifts, refetch } = useQuery({
     queryKey: ['gifts'],
-    queryFn: () => {
-      // Simulating an API call with localStorage
-      const storedGifts = localStorage.getItem('gifts');
-      return storedGifts ? JSON.parse(storedGifts) : initialGifts;
+    queryFn: async () => {
+      const storedGifts = localStorage.getItem(STORAGE_KEY);
+      if (!storedGifts) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialGifts));
+        return initialGifts;
+      }
+      return JSON.parse(storedGifts);
     },
-    refetchInterval: 5000, // Refetch every 5 seconds to keep the list updated
+    refetchInterval: 2000, // Refetch every 2 seconds
+    staleTime: 0, // Consider data stale immediately
+    cacheTime: 0, // Don't cache the data
   });
 
-  const handleChooseGift = (giftId: number) => {
-    const updatedGifts = gifts.map(gift => {
+  const handleChooseGift = async (giftId: number) => {
+    const currentGifts = await queryClient.fetchQuery({
+      queryKey: ['gifts'],
+      queryFn: async () => {
+        const storedGifts = localStorage.getItem(STORAGE_KEY);
+        return storedGifts ? JSON.parse(storedGifts) : initialGifts;
+      },
+    });
+
+    const gift = currentGifts.find((g: Gift) => g.id === giftId);
+    
+    if (gift?.chosen) {
+      toast({
+        title: "Presente já escolhido",
+        description: "Este presente já foi reservado por outro convidado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updatedGifts = currentGifts.map((gift: Gift) => {
       if (gift.id === giftId) {
-        if (gift.chosen) {
-          toast({
-            title: "Presente já escolhido",
-            description: "Este presente já foi reservado por outro convidado",
-            variant: "destructive",
-          });
-          return gift;
-        }
-        toast({
-          title: "Presente escolhido!",
-          description: "Sua escolha foi registrada com sucesso",
-        });
         return { ...gift, chosen: true, chosenBy: userName };
       }
       return gift;
     });
 
-    // Update localStorage and invalidate query
-    localStorage.setItem('gifts', JSON.stringify(updatedGifts));
-    queryClient.setQueryData(['gifts'], updatedGifts);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedGifts));
+    await queryClient.invalidateQueries({ queryKey: ['gifts'] });
+    
+    toast({
+      title: "Presente escolhido!",
+      description: "Sua escolha foi registrada com sucesso",
+    });
     
     setSelectedGiftId(null);
     setHasChosen(true);
   };
 
-  const handleReset = () => {
-    localStorage.setItem('gifts', JSON.stringify(initialGifts));
-    queryClient.setQueryData(['gifts'], initialGifts);
+  const handleReset = async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initialGifts));
+    await queryClient.invalidateQueries({ queryKey: ['gifts'] });
     toast({
       title: "Lista reiniciada",
       description: "Todos os presentes estão disponíveis novamente",
