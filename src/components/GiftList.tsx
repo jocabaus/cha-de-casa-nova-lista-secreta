@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
@@ -48,7 +48,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   });
 
   // Configurando subscription para atualizações em tempo real
-  useState(() => {
+  useEffect(() => {
     const channel = supabase
       .channel('gifts_changes')
       .on(
