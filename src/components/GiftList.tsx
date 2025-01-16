@@ -61,7 +61,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
     },
     refetchInterval: 2000, // Refetch every 2 seconds
     staleTime: 0, // Consider data stale immediately
-    cacheTime: 0, // Don't cache the data
+    gcTime: 0, // Don't keep data in cache
   });
 
   const handleChooseGift = async (giftId: number) => {
