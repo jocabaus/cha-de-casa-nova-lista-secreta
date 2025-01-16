@@ -15,22 +15,7 @@ import { Gift } from "@/types/gift";
 import { AdminGiftList } from "./gift/AdminGiftList";
 import { UserGiftList } from "./gift/UserGiftList";
 import { ThankYouMessage } from "./gift/ThankYouMessage";
-
-const initialGifts: Gift[] = [
-  { id: 1, name: "Saleiro e Pimenteiro", description: "Um conjuntinho de saleiro e pimenteiro divertidos", chosen: false },
-  { id: 2, name: "Cesto de Roupa Suja", description: "Um cestinho alto para roupas sujas, gosto daqueles de palha ou materiais naturais", chosen: false },
-  { id: 3, name: "Potes Herméticos", description: "Conjuntinho de potes bonitos para colocar arroz, açúcar, farinha etc.", chosen: false },
-  { id: 4, name: "Tapetinho Capacho", description: "Com uma mensagem ou imagem divertida", chosen: false },
-  { id: 5, name: "Utilitários de Cozinha", description: "Panelas, chaleira, travessas, formas, canecas, cumbucas, utensílios pra comidas no geral", chosen: false },
-  { id: 6, name: "Copos", description: "Copos de vidro para água e suco", chosen: false },
-  { id: 7, name: "Decorações", description: "Quadrinhos, almofadas, vasinhos de plantas etc.", chosen: false },
-  { id: 8, name: "Caixas Organizadoras", description: "De todos os tamanhos, em tons neutros", chosen: false },
-  { id: 9, name: "Jogo de Cama Queen", description: "Com uma estampa bonita e/ou em tons pastel", chosen: false },
-  { id: 10, name: "Toalha de Rosto", description: "Qualquer tom de verde", chosen: false },
-];
-
-// Usando uma chave única e global para o storage
-const STORAGE_KEY = 'gifts_global_v1';
+import { supabase } from "@/lib/supabase";
 
 interface GiftListProps {
   userName: string;
@@ -43,35 +28,52 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [hasChosen, setHasChosen] = useState(false);
 
-  // Configurando o useQuery para atualizar mais frequentemente
-  const { data: gifts = initialGifts } = useQuery({
+  // Configurando o useQuery para usar Supabase
+  const { data: gifts = [] } = useQuery({
     queryKey: ['gifts'],
     queryFn: async () => {
-      const storedGifts = localStorage.getItem(STORAGE_KEY);
-      if (!storedGifts) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialGifts));
-        return initialGifts;
+      const { data, error } = await supabase
+        .from('gifts')
+        .select('*')
+        .order('id');
+      
+      if (error) {
+        console.error('Error fetching gifts:', error);
+        return [];
       }
-      return JSON.parse(storedGifts);
+      
+      return data;
     },
-    refetchInterval: 1000, // Atualizando a cada 1 segundo
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 1000,
   });
+
+  // Configurando subscription para atualizações em tempo real
+  useState(() => {
+    const channel = supabase
+      .channel('gifts_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'gifts' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['gifts'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const handleChooseGift = async (giftId: number) => {
     // Verificando em tempo real antes de fazer a escolha
-    const currentGifts = await queryClient.fetchQuery({
-      queryKey: ['gifts'],
-      queryFn: async () => {
-        const storedGifts = localStorage.getItem(STORAGE_KEY);
-        return storedGifts ? JSON.parse(storedGifts) : initialGifts;
-      },
-    });
-
-    const gift = currentGifts.find((g: Gift) => g.id === giftId);
+    const { data: currentGift } = await supabase
+      .from('gifts')
+      .select('chosen')
+      .eq('id', giftId)
+      .single();
     
-    if (gift?.chosen) {
+    if (currentGift?.chosen) {
       toast({
         title: "Presente já escolhido",
         description: "Este presente já foi reservado por outro convidado",
@@ -80,15 +82,20 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
       return;
     }
 
-    const updatedGifts = currentGifts.map((gift: Gift) => {
-      if (gift.id === giftId) {
-        return { ...gift, chosen: true, chosenBy: userName };
-      }
-      return gift;
-    });
+    const { error } = await supabase
+      .from('gifts')
+      .update({ chosen: true, chosen_by: userName })
+      .eq('id', giftId);
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedGifts));
-    await queryClient.invalidateQueries({ queryKey: ['gifts'] });
+    if (error) {
+      console.error('Error updating gift:', error);
+      toast({
+        title: "Erro ao escolher presente",
+        description: "Por favor, tente novamente",
+        variant: "destructive",
+      });
+      return;
+    }
     
     toast({
       title: "Presente escolhido!",
@@ -100,8 +107,21 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   };
 
   const handleReset = async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(initialGifts));
-    await queryClient.invalidateQueries({ queryKey: ['gifts'] });
+    const { error } = await supabase
+      .from('gifts')
+      .update({ chosen: false, chosen_by: null })
+      .neq('id', 0); // atualiza todos os registros
+
+    if (error) {
+      console.error('Error resetting gifts:', error);
+      toast({
+        title: "Erro ao reiniciar lista",
+        description: "Por favor, tente novamente",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Lista reiniciada",
       description: "Todos os presentes estão disponíveis novamente",
