@@ -9,61 +9,68 @@ export const useGifts = () => {
   const { data: gifts = [], isLoading } = useQuery({
     queryKey: ['gifts'],
     queryFn: async () => {
-      const { data: gifts, error } = await supabase
-        .from('gifts')
-        .select('*');
-
-      if (error) {
-        console.error('Error fetching gifts:', error);
-        return initialGifts;
-      }
-
-      if (!gifts || gifts.length === 0) {
-        const { data: newGifts, error: insertError } = await supabase
+      try {
+        const { data: gifts, error } = await supabase
           .from('gifts')
-          .insert(initialGifts)
-          .select();
+          .select('*');
 
-        if (insertError) {
-          console.error('Error inserting initial gifts:', insertError);
+        if (error) {
+          console.error('Error fetching gifts:', error);
           return initialGifts;
         }
 
-        return newGifts || initialGifts;
-      }
+        if (!gifts || gifts.length === 0) {
+          console.log('No gifts found in database, using initial gifts');
+          return initialGifts;
+        }
 
-      return gifts;
-    }
+        return gifts;
+      } catch (error) {
+        console.error('Failed to fetch gifts:', error);
+        return initialGifts;
+      }
+    },
+    initialData: initialGifts
   });
 
   const chooseGift = async (giftId: number, userName: string) => {
-    const { error } = await supabase
-      .from('gifts')
-      .update({ chosen: true, chosen_by: userName })
-      .eq('id', giftId);
+    try {
+      const { error } = await supabase
+        .from('gifts')
+        .update({ chosen: true, chosen_by: userName })
+        .eq('id', giftId);
 
-    if (error) {
-      console.error('Error choosing gift:', error);
+      if (error) {
+        console.error('Error choosing gift:', error);
+        return false;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['gifts'] });
+      return true;
+    } catch (error) {
+      console.error('Failed to choose gift:', error);
       return false;
     }
-
-    queryClient.invalidateQueries({ queryKey: ['gifts'] });
-    return true;
   };
 
   const resetGifts = async () => {
-    const { error } = await supabase
-      .from('gifts')
-      .update({ chosen: false, chosen_by: null })
-      .neq('id', 0);
+    try {
+      const { error } = await supabase
+        .from('gifts')
+        .update({ chosen: false, chosen_by: null })
+        .neq('id', 0);
 
-    if (error) {
-      console.error('Error resetting gifts:', error);
+      if (error) {
+        console.error('Error resetting gifts:', error);
+        return false;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['gifts'] });
+      return true;
+    } catch (error) {
+      console.error('Failed to reset gifts:', error);
       return false;
     }
-
-    queryClient.invalidateQueries({ queryKey: ['gifts'] });
-    return true;
   };
 
   return {
