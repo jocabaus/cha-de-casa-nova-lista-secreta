@@ -29,7 +29,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const [hasChosen, setHasChosen] = useState(false);
 
   // Configurando o useQuery para usar Supabase
-  const { data: gifts = [] } = useQuery({
+  const { data: gifts = [], isLoading } = useQuery({
     queryKey: ['gifts'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,12 +39,23 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
       
       if (error) {
         console.error('Error fetching gifts:', error);
+        toast({
+          title: "Erro ao carregar presentes",
+          description: "Houve um problema ao carregar a lista de presentes",
+          variant: "destructive",
+        });
         return [];
       }
       
-      return data;
+      // Verifica se o usuário já escolheu algum presente
+      const userGift = data?.find(gift => gift.chosen_by === userName);
+      if (userGift) {
+        setHasChosen(true);
+      }
+      
+      return data || [];
     },
-    refetchInterval: 1000,
+    refetchInterval: 3000, // Atualiza a cada 3 segundos
   });
 
   // Configurando subscription para atualizações em tempo real
@@ -66,67 +77,91 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   }, [queryClient]);
 
   const handleChooseGift = async (giftId: number) => {
-    // Verificando em tempo real antes de fazer a escolha
-    const { data: currentGift } = await supabase
-      .from('gifts')
-      .select('chosen')
-      .eq('id', giftId)
-      .single();
-    
-    if (currentGift?.chosen) {
+    try {
+      // Verificando em tempo real antes de fazer a escolha
+      const { data: currentGift } = await supabase
+        .from('gifts')
+        .select('chosen')
+        .eq('id', giftId)
+        .single();
+      
+      if (currentGift?.chosen) {
+        toast({
+          title: "Presente já escolhido",
+          description: "Este presente já foi reservado por outro convidado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('gifts')
+        .update({ chosen: true, chosen_by: userName })
+        .eq('id', giftId);
+
+      if (error) {
+        console.error('Error updating gift:', error);
+        toast({
+          title: "Erro ao escolher presente",
+          description: "Por favor, tente novamente",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
-        title: "Presente já escolhido",
-        description: "Este presente já foi reservado por outro convidado",
-        variant: "destructive",
+        title: "Presente escolhido!",
+        description: "Sua escolha foi registrada com sucesso",
       });
-      return;
-    }
-
-    const { error } = await supabase
-      .from('gifts')
-      .update({ chosen: true, chosen_by: userName })
-      .eq('id', giftId);
-
-    if (error) {
-      console.error('Error updating gift:', error);
+      
+      setSelectedGiftId(null);
+      setHasChosen(true);
+      queryClient.invalidateQueries({ queryKey: ['gifts'] });
+    } catch (error) {
+      console.error('Error choosing gift:', error);
       toast({
         title: "Erro ao escolher presente",
         description: "Por favor, tente novamente",
         variant: "destructive",
       });
-      return;
     }
-    
-    toast({
-      title: "Presente escolhido!",
-      description: "Sua escolha foi registrada com sucesso",
-    });
-    
-    setSelectedGiftId(null);
-    setHasChosen(true);
   };
 
   const handleReset = async () => {
-    const { error } = await supabase
-      .from('gifts')
-      .update({ chosen: false, chosen_by: null })
-      .neq('id', 0); // atualiza todos os registros
+    try {
+      const { error } = await supabase
+        .from('gifts')
+        .update({ chosen: false, chosen_by: null })
+        .neq('id', 0);
 
-    if (error) {
+      if (error) {
+        console.error('Error resetting gifts:', error);
+        toast({
+          title: "Erro ao reiniciar lista",
+          description: "Por favor, tente novamente",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Lista reiniciada",
+        description: "Todos os presentes estão disponíveis novamente",
+      });
+      queryClient.invalidateQueries({ queryKey: ['gifts'] });
+    } catch (error) {
       console.error('Error resetting gifts:', error);
       toast({
         title: "Erro ao reiniciar lista",
         description: "Por favor, tente novamente",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Lista reiniciada",
-      description: "Todos os presentes estão disponíveis novamente",
-    });
   };
+
+  if (isLoading) {
+    return <div className="text-center">Carregando presentes...</div>;
+  }
 
   if (isAdmin) {
     return <AdminGiftList gifts={gifts} onReset={handleReset} />;
