@@ -3,5 +3,5 @@ export interface Gift {
   name: string;
   description: string;
   chosen: boolean;
-  chosenBy?: string;
+  chosen_by?: string | null;
 }

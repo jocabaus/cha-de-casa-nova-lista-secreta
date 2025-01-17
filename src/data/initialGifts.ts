@@ -1,71 +1,36 @@
 export const initialGifts = [
   {
     id: 1,
-    name: "Saleiro e Pimenteiro",
-    description: "Um conjuntinho de saleiro e pimenteiro divertidos",
+    name: "Jogo de Toalhas",
+    description: "Kit com 4 toalhas de banho",
     chosen: false,
     chosen_by: null
   },
   {
     id: 2,
-    name: "Cesto de Roupa Suja",
-    description: "Um cestinho alto para roupas sujas, em palha ou materiais naturais",
+    name: "Jogo de Panelas",
+    description: "Kit básico com 5 panelas",
     chosen: false,
     chosen_by: null
   },
   {
     id: 3,
-    name: "Potes Herméticos",
-    description: "Conjuntinho de potes bonitos para colocar arroz, açúcar, farinha etc.",
+    name: "Jogo de Talheres",
+    description: "Kit com talheres para 6 pessoas",
     chosen: false,
     chosen_by: null
   },
   {
     id: 4,
-    name: "Tapetinho Capacho",
-    description: "Com uma mensagem ou imagem divertida",
+    name: "Liquidificador",
+    description: "Liquidificador 110V",
     chosen: false,
     chosen_by: null
   },
   {
     id: 5,
-    name: "Utilitários de Cozinha",
-    description: "Panelas, chaleira, travessas, formas, canecas, cumbucas, utensílios pra comidas no geral",
-    chosen: false,
-    chosen_by: null
-  },
-  {
-    id: 6,
-    name: "Copos",
-    description: "Copos de vidro para água e suco",
-    chosen: false,
-    chosen_by: null
-  },
-  {
-    id: 7,
-    name: "Decorações",
-    description: "Quadrinhos, almofadas, vasinhos de plantas etc.",
-    chosen: false,
-    chosen_by: null
-  },
-  {
-    id: 8,
-    name: "Caixas Organizadoras",
-    description: "De todos os tamanhos, em tons neutros",
-    chosen: false,
-    chosen_by: null
-  },
-  {
-    id: 9,
-    name: "Jogo de Cama Queen",
-    description: "Com uma estampa bonita e/ou em tons pastel",
-    chosen: false,
-    chosen_by: null
-  },
-  {
-    id: 10,
-    name: "Toalha de Rosto",
-    description: "Qualquer tom de verde",
+    name: "Cafeteira",
+    description: "Cafeteira elétrica 110V",
     chosen: false,
     chosen_by: null
   }
