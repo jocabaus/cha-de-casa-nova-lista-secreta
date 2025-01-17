@@ -15,15 +15,21 @@ export const useGifts = () => {
 
       if (error) {
         console.error('Error fetching gifts:', error);
-        return [];
+        return initialGifts;
       }
 
       if (!gifts || gifts.length === 0) {
-        const { data: newGifts } = await supabase
+        const { data: newGifts, error: insertError } = await supabase
           .from('gifts')
           .insert(initialGifts)
           .select();
-        return newGifts || [];
+
+        if (insertError) {
+          console.error('Error inserting initial gifts:', insertError);
+          return initialGifts;
+        }
+
+        return newGifts || initialGifts;
       }
 
       return gifts;
@@ -31,12 +37,10 @@ export const useGifts = () => {
   });
 
   const chooseGift = async (giftId: number, userName: string) => {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('gifts')
       .update({ chosen: true, chosen_by: userName })
-      .eq('id', giftId)
-      .select()
-      .single();
+      .eq('id', giftId);
 
     if (error) {
       console.error('Error choosing gift:', error);
