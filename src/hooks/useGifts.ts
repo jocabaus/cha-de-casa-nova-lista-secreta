@@ -15,7 +15,6 @@ export const useGifts = () => {
         .from('gifts')
         .select('*');
 
-      // Se não houver presentes, inicializa com a lista padrão
       if (!existingGifts || existingGifts.length === 0) {
         const { error: insertError } = await supabase
           .from('gifts')
@@ -23,7 +22,7 @@ export const useGifts = () => {
 
         if (insertError) {
           console.error('Error inserting initial gifts:', insertError);
-          return [];
+          return initialGifts;
         }
 
         return initialGifts;
@@ -31,7 +30,7 @@ export const useGifts = () => {
 
       if (checkError) {
         console.error('Error fetching gifts:', checkError);
-        return [];
+        return initialGifts;
       }
 
       return existingGifts;
@@ -70,11 +69,6 @@ export const useGifts = () => {
         return false;
       }
       
-      toast({
-        title: "Presente escolhido!",
-        description: "Sua escolha foi registrada com sucesso",
-      });
-      
       queryClient.invalidateQueries({ queryKey: ['gifts'] });
       return true;
     } catch (error) {
@@ -99,10 +93,6 @@ export const useGifts = () => {
         return false;
       }
 
-      toast({
-        title: "Lista reiniciada",
-        description: "Todos os presentes estão disponíveis novamente",
-      });
       queryClient.invalidateQueries({ queryKey: ['gifts'] });
       return true;
     } catch (error) {
