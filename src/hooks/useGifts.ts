@@ -9,9 +9,14 @@ export const useGifts = () => {
   const { data: gifts = [], isLoading } = useQuery({
     queryKey: ['gifts'],
     queryFn: async () => {
-      const { data: gifts } = await supabase
+      const { data: gifts, error } = await supabase
         .from('gifts')
         .select('*');
+
+      if (error) {
+        console.error('Error fetching gifts:', error);
+        return [];
+      }
 
       if (!gifts || gifts.length === 0) {
         const { data: newGifts } = await supabase
@@ -22,23 +27,24 @@ export const useGifts = () => {
       }
 
       return gifts;
-    },
-    refetchInterval: 3000
+    }
   });
 
   const chooseGift = async (giftId: number, userName: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('gifts')
       .update({ chosen: true, chosen_by: userName })
       .eq('id', giftId)
       .select()
       .single();
 
-    if (data) {
-      queryClient.invalidateQueries({ queryKey: ['gifts'] });
-      return true;
+    if (error) {
+      console.error('Error choosing gift:', error);
+      return false;
     }
-    return false;
+
+    queryClient.invalidateQueries({ queryKey: ['gifts'] });
+    return true;
   };
 
   const resetGifts = async () => {
@@ -47,11 +53,13 @@ export const useGifts = () => {
       .update({ chosen: false, chosen_by: null })
       .neq('id', 0);
 
-    if (!error) {
-      queryClient.invalidateQueries({ queryKey: ['gifts'] });
-      return true;
+    if (error) {
+      console.error('Error resetting gifts:', error);
+      return false;
     }
-    return false;
+
+    queryClient.invalidateQueries({ queryKey: ['gifts'] });
+    return true;
   };
 
   return {
