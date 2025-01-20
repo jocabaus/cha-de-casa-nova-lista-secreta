@@ -29,7 +29,6 @@ const initialGifts: Gift[] = [
   { id: 10, name: "Toalha de Rosto", description: "Qualquer tom de verde", chosen: false },
 ];
 
-// Usando uma chave única e global para o storage
 const STORAGE_KEY = 'gifts_global_v1';
 
 interface GiftListProps {
@@ -42,8 +41,8 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   const queryClient = useQueryClient();
   const [selectedGiftId, setSelectedGiftId] = useState<number | null>(null);
   const [hasChosen, setHasChosen] = useState(false);
+  const [chosenGiftName, setChosenGiftName] = useState<string>("");
 
-  // Configurando o useQuery para atualizar mais frequentemente
   const { data: gifts = initialGifts } = useQuery({
     queryKey: ['gifts'],
     queryFn: async () => {
@@ -54,13 +53,12 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
       }
       return JSON.parse(storedGifts);
     },
-    refetchInterval: 1000, // Atualizando a cada 1 segundo
+    refetchInterval: 1000,
     staleTime: 0,
     gcTime: 0,
   });
 
   const handleChooseGift = async (giftId: number) => {
-    // Verificando em tempo real antes de fazer a escolha
     const currentGifts = await queryClient.fetchQuery({
       queryKey: ['gifts'],
       queryFn: async () => {
@@ -96,6 +94,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
     });
     
     setSelectedGiftId(null);
+    setChosenGiftName(gift?.name || "");
     setHasChosen(true);
   };
 
@@ -113,7 +112,7 @@ export const GiftList = ({ userName, isAdmin = false }: GiftListProps) => {
   }
 
   if (hasChosen) {
-    return <ThankYouMessage userName={userName} />;
+    return <ThankYouMessage userName={userName} chosenGiftName={chosenGiftName} />;
   }
 
   return (
