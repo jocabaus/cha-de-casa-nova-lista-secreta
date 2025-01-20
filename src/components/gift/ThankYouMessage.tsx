@@ -19,6 +19,9 @@ export const ThankYouMessage = ({ userName, chosenGiftName }: ThankYouMessagePro
         <p className="text-muted-foreground mt-4">
           Agradecemos sua participação neste momento especial.
         </p>
+        <p className="text-sage-600 font-medium mt-6 border-t border-sage-200 pt-4">
+          Por favor, tire um print (screenshot) desta tela e envie para a Laura no WhatsApp!
+        </p>
       </div>
     </div>
   );
